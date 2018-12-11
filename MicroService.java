@@ -36,7 +36,6 @@ public abstract class MicroService implements Runnable {
         this.callbacks = new HashMap<>();
         this.messageBus = MessageBusImpl.getInstance();
         messageBus.register(this);
-        run();
     }
 
     /**
