@@ -4,6 +4,8 @@ import bgu.spl.mics.application.messages.*;
 import bgu.spl.mics.application.passiveObjects.*;
 import bgu.spl.mics.*;
 
+import java.util.LinkedList;
+
 /**
  * APIService is in charge of the connection between a client and the store.
  * It informs the store about desired purchases using {@link BookOrderEvent}.
@@ -16,26 +18,36 @@ import bgu.spl.mics.*;
 public class APIService extends MicroService{
 
 	private Customer c;
+	int orderId;					//TODO: move to main
+	LinkedList<BookInventoryInfo> orderList;
 
-	public APIService(String name, Customer c) {
+	public APIService(String name, Customer c, int orderId, LinkedList<BookInventoryInfo> orderList) {
 		super(name);
 		this.c = c;
+		this.orderId=orderId;
+		this.orderList=orderList;
 	}
 
 	@Override
 	protected void initialize() {
 		//subscribeBroadcast(TimeTick.class, timeCB -> () );
-		Callback<CheckBankAccountEvent> checkBankAcc = (e) -> {
-			if(c.getAvailableCreditAmount() >= e.price)
-				c.chargeCreditCard(e.price);
-				complete(e, (c.getAvailableCreditAmount()-e.price)>=0);
+
+		subscribeEvent(CancelOrderEvent.class, cancel -> {/**/}) ;	// TODO: fix this shit
+
+		sendEvent(new BookOrderEvent(orderId));
+
+		//CheckBankAccountEvent handler
+		Callback<CheckBankAccountEvent> checkBankAcc;
+		checkBankAcc = (e) -> {
+			complete(e, (c.getAvailableCreditAmount()-e.getPrice())>=0);
+			e.notifyAll();
 		};
 		subscribeEvent(CheckBankAccountEvent.class, checkBankAcc);
+		//CompleteOrderEvent handler
+		Callback<CompleteOrderEvent> complete = (e) -> {			// TODO: fix this shit also
+			for (BookInventoryInfo book: orderList)
+				c.getCustomerReceiptList().add(new OrderReceipt(orderId, c, book, e.getSeller()));
 
-		subscribeEvent(CancelOrderEvent.class, cancel -> {/*///////*/});		// TODO: fix this shit
-
-		Callback<CompleteOrderEvent> complete = (e) -> {					// TODO: fix this shit also
-			return e.receipt;
 		};
 		subscribeEvent(CompleteOrderEvent.class, complete);
 	}

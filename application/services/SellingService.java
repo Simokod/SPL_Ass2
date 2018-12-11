@@ -1,6 +1,10 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Callback;
+import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.*;
+import bgu.spl.mics.application.passiveObjects.*;
 
 import java.io.Serializable;
 
@@ -16,14 +20,46 @@ import java.io.Serializable;
  */
 public class SellingService extends MicroService implements Serializable {
 
-	public SellingService() {
+	MoneyRegister register;
+	private Customer c;
+
+	public SellingService(Customer c) {
 		super("sellingService");
-		// TODO Implement this
+		register=MoneyRegister.getInstance();
+		this.c=c;
 	}
 
 	@Override
 	protected void initialize() {
-		// TODO Implement this
+		Callback<BookOrderEvent> order = (e) -> {
+			Future<Boolean> isInInv= super.sendEvent(new CheckBookAvailabiltyEvent());
+			while (!isInInv.isDone())
+				try {
+					this.wait();
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+			if (isInInv.get()) {
+				CheckBankAccountEvent checkAcc= new CheckBankAccountEvent(e.getPrice());
+				Future<Boolean> has$ = super.sendEvent(checkAcc);//@TODO: check for diarrhea leaks
+				while(!has$.isDone())
+					try {
+						checkAcc.wait();
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
+				if (has$.get()){
+					register.chargeCreditCard(c, e.getPrice());
+					sendEvent(new DeliveryEvent());
+					sendEvent(new CompleteOrderEvent(this));
+				}
+				else
+					sendEvent(new CancelOrderEvent());
+			}
+			else
+				sendEvent(new CancelOrderEvent());
+		};
+		subscribeEvent(BookOrderEvent.class, order);
 	}
 
 }

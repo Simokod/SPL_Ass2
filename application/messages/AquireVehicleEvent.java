@@ -1,4 +1,6 @@
 package bgu.spl.mics.application.messages;
 
-public class AquireVehicleEvent {
+import bgu.spl.mics.Event;
+
+public class AquireVehicleEvent implements Event {
 }

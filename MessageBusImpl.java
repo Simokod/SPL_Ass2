@@ -1,10 +1,12 @@
 package bgu.spl.mics;
 
+import bgu.spl.mics.application.messages.*;
+
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.Iterator;
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
  * Write your implementation here!
@@ -14,8 +16,8 @@ public class MessageBusImpl implements MessageBus {
 
 	private static MessageBusImpl instance = new MessageBusImpl();
 	private HashMap<MicroService, LinkedBlockingQueue<Message>> msgQueues;	// a message queue for each ms
-	private HashMap<Event, ConcurrentLinkedQueue<MicroService>> eventSubs;	// saving subs to events
-	private HashMap<Broadcast, LinkedList<MicroService>> brdSubs;			// saving subs to broadcasts
+	private HashMap<Class<? extends Event> , ConcurrentLinkedQueue<MicroService>> eventSubs;	// saving subs to events
+	private HashMap<Class<? extends Broadcast> , LinkedList<MicroService>> brdSubs;			// saving subs to broadcasts
 	private HashMap<Event, Future> eventFutures;
 
 	// Private Constructor
@@ -24,6 +26,23 @@ public class MessageBusImpl implements MessageBus {
 		eventSubs = new HashMap<>();
 		brdSubs = new HashMap<>();
 		eventFutures = new HashMap<>();
+		createQueues();
+	}
+
+	//Initializes Queue for every message
+	private void createQueues(){
+		//Events
+		eventSubs.put(DeliveryEvent.class, new ConcurrentLinkedQueue<>());
+		eventSubs.put(CheckBankAccountEvent.class, new ConcurrentLinkedQueue<>());
+		eventSubs.put(CheckBookAvailabiltyEvent.class, new ConcurrentLinkedQueue<>());
+		eventSubs.put(ReleaseVehicleEvent.class, new ConcurrentLinkedQueue<>());
+		eventSubs.put(CheckVehicleAvailabilityEvent.class, new ConcurrentLinkedQueue<>());
+		eventSubs.put(CompleteOrderEvent.class, new ConcurrentLinkedQueue<>());
+		eventSubs.put(BookOrderEvent.class, new ConcurrentLinkedQueue<>());
+		eventSubs.put(AquireVehicleEvent.class, new ConcurrentLinkedQueue<>());
+		eventSubs.put(CancelOrderEvent.class, new ConcurrentLinkedQueue<>());
+		//Broadcasts
+		brdSubs.put(TimeTick.class, new LinkedList<>());
 	}
 
 	public static MessageBusImpl getInstance() { return MessageBusImpl.instance; }

@@ -2,7 +2,6 @@ package bgu.spl.mics.application.passiveObjects;
 
 import bgu.spl.mics.application.services.SellingService;
 
-import java.awt.print.Book;
 import java.io.Serializable;
 
 /**

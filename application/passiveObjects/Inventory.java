@@ -22,7 +22,7 @@ public class Inventory {
 	private HashMap<String, BookInventoryInfo> bookInventory;
 
 	/**
-	 * Constructor
+	 *Constructor
 	 */
 	private Inventory() { this.bookInventory = new HashMap<>(); }
 
@@ -72,11 +72,13 @@ public class Inventory {
      * @return the price of the book if it is available, -1 otherwise.
      */
 	public int checkAvailabiltyAndGetPrice(String book) {
-		BookInventoryInfo temp = bookInventory.get(book);
-		if(temp.getAmountInInventory()>0)
-			return temp.getPrice();
-		else
-			return -1;
+		synchronized (bookInventory.get(book)){
+			BookInventoryInfo temp = bookInventory.get(book);
+			if(temp.getAmountInInventory()>0)
+				return temp.getPrice();
+			else
+				return -1;
+		}
 	}
 	
 	/**
