@@ -1,6 +1,5 @@
 package bgu.spl.mics;
 
-import bgu.spl.mics.application.messages.*;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,9 +14,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class MessageBusImpl implements MessageBus {
 
 	private static MessageBusImpl instance = new MessageBusImpl();
-	private HashMap<MicroService, LinkedBlockingQueue<Message>> msgQueues;	// a message queue for each ms
+	private HashMap<MicroService, LinkedBlockingQueue<Message>> msgQueues;						// a message queue for each ms
 	private HashMap<Class<? extends Event> , ConcurrentLinkedQueue<MicroService>> eventSubs;	// saving subs to events
-	private HashMap<Class<? extends Broadcast> , LinkedList<MicroService>> brdSubs;			// saving subs to broadcasts
+	private HashMap<Class<? extends Broadcast> , LinkedList<MicroService>> brdSubs;				// saving subs to broadcasts
 	private HashMap<Event, Future> eventFutures;
 
 	// Private Constructor
@@ -26,54 +25,43 @@ public class MessageBusImpl implements MessageBus {
 		eventSubs = new HashMap<>();
 		brdSubs = new HashMap<>();
 		eventFutures = new HashMap<>();
-		createQueues();
-	}
-
-	//Initializes Queue for every message
-	private void createQueues(){
-		//Events
-		eventSubs.put(DeliveryEvent.class, new ConcurrentLinkedQueue<>());
-		eventSubs.put(CheckBankAccountEvent.class, new ConcurrentLinkedQueue<>());
-		eventSubs.put(CheckBookAvailabiltyEvent.class, new ConcurrentLinkedQueue<>());
-		eventSubs.put(ReleaseVehicleEvent.class, new ConcurrentLinkedQueue<>());
-		eventSubs.put(CheckVehicleAvailabilityEvent.class, new ConcurrentLinkedQueue<>());
-		eventSubs.put(CompleteOrderEvent.class, new ConcurrentLinkedQueue<>());
-		eventSubs.put(BookOrderEvent.class, new ConcurrentLinkedQueue<>());
-		eventSubs.put(AquireVehicleEvent.class, new ConcurrentLinkedQueue<>());
-		eventSubs.put(CancelOrderEvent.class, new ConcurrentLinkedQueue<>());
-		//Broadcasts
-		brdSubs.put(TimeTick.class, new LinkedList<>());
 	}
 
 	public static MessageBusImpl getInstance() { return MessageBusImpl.instance; }
 
 	@Override
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		eventSubs.get(type).add(m);
+		eventSubs.computeIfAbsent(type, k -> new ConcurrentLinkedQueue<>()).add(m);
 	}
 
 	@Override
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		brdSubs.get(type).add(m);
+		brdSubs.computeIfAbsent(type, k -> new LinkedList<>()).add(m);
 	}
 
 	@Override
 	public <T> void complete(Event<T> e, T result) {
+		while(eventFutures.get(e)==null);			// TODO: fix this
 		eventFutures.get(e).resolve(result);
 	}
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		for(MicroService m: brdSubs.get(b))
-			msgQueues.get(msgQueues.get(m)).offer(b);
+		for(MicroService m: brdSubs.get(b.getClass()))
+			msgQueues.get(m).offer(b);
 	}
 
 
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		msgQueues.get(eventSubs.get(e).peek()).offer(e);	// Adding the event to the microService in line
-		eventSubs.get(e).offer(eventSubs.get(e).poll());	// Moving the microService to the back of the queue according to round robin
-		Future<T> temp = new Future<>();					// Saving the future in order to resolve it in the future
+		Class evCls = e.getClass();
+		if(eventSubs.get(evCls) ==null) {
+			System.out.println("no such queue");
+			return null;
+		}
+		msgQueues.get(eventSubs.get(evCls).peek()).offer(e);		// Adding the event to the microService in line
+		eventSubs.get(evCls).offer(eventSubs.get(evCls).poll());	// Moving the microService to the back of the queue according to round robin
+		Future<T> temp = new Future<>();							// Saving the future in order to resolve it in the future
 		eventFutures.put(e, temp);
 		return temp;
 	}
