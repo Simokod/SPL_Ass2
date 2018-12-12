@@ -31,35 +31,20 @@ public class SellingService extends MicroService implements Serializable {
 
 	@Override
 	protected void initialize() {
-		Callback<BookOrderEvent> order = (e) -> {
-			Future<Boolean> isInInv= super.sendEvent(new CheckBookAvailabiltyEvent());
-			while (!isInInv.isDone())
-				try {
-					this.wait();
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-			if (isInInv.get()) {
-				CheckBankAccountEvent checkAcc= new CheckBankAccountEvent(e.getPrice());
-				Future<Boolean> has$ = super.sendEvent(checkAcc);//@TODO: check for diarrhea leaks
-				while(!has$.isDone())
-					try {
-						checkAcc.wait();
-					} catch (InterruptedException e1) {
-						e1.printStackTrace();
-					}
-				if (has$.get()){
-					register.chargeCreditCard(c, e.getPrice());
-					sendEvent(new DeliveryEvent());
-					sendEvent(new CompleteOrderEvent(this));
-				}
-				else
+		Callback<BookOrderEvent> order = (orderEvent) -> {
+
+			synchronized (orderEvent.getBook()) {
+				BookInventoryInfo book=orderEvent.getBook();
+				Future<Integer> priceIfOrderPossible = sendEvent(new CheckAvailabilityEvent(book.getBookTitle()));
+				if (priceIfOrderPossible.get() != -1) {
+					register.chargeCreditCard(c, priceIfOrderPossible.get());
+					CompleteOrderEvent completeOrder = new CompleteOrderEvent(this.getName(), book);
+					Future<OrderReceipt> receipt = sendEvent(completeOrder);
+					register.file(receipt.get());
+				} else
 					sendEvent(new CancelOrderEvent());
 			}
-			else
-				sendEvent(new CancelOrderEvent());
 		};
 		subscribeEvent(BookOrderEvent.class, order);
 	}
-
 }

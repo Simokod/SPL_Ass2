@@ -2,5 +2,5 @@ package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Event;
 
-public class CancelOrderEvent implements Event {
+public class CancelOrderEvent implements Event<Boolean> {
 }

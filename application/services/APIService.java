@@ -34,20 +34,24 @@ public class APIService extends MicroService{
 
 		subscribeEvent(CancelOrderEvent.class, cancel -> {/**/}) ;	// TODO: fix this shit
 
-		sendEvent(new BookOrderEvent(orderId));
+		for (BookInventoryInfo book:orderList) {
+			sendEvent(new BookOrderEvent(book));
+		}
 
 		//CheckBankAccountEvent handler
 		Callback<CheckBankAccountEvent> checkBankAcc;
-		checkBankAcc = (e) -> {
-			complete(e, (c.getAvailableCreditAmount()-e.getPrice())>=0);
-			e.notifyAll();
+		checkBankAcc = (checkAccEvent) -> {
+			complete(checkAccEvent, (c.getAvailableCreditAmount()-checkAccEvent.getPrice())>=0);
 		};
 		subscribeEvent(CheckBankAccountEvent.class, checkBankAcc);
-		//CompleteOrderEvent handler
-		Callback<CompleteOrderEvent> complete = (e) -> {			// TODO: fix this shit also
-			for (BookInventoryInfo book: orderList)
-				c.getCustomerReceiptList().add(new OrderReceipt(orderId, c, book, e.getSeller()));
 
+		//CompleteOrderEvent handler
+		Callback<CompleteOrderEvent> complete;
+		complete = (completeOrderEvent) -> {
+			OrderReceipt receipt= new OrderReceipt(orderId, c, completeOrderEvent.getBook(), completeOrderEvent.getSeller());
+			c.getCustomerReceiptList().add(receipt);
+			complete(completeOrderEvent, receipt);
+			//sendEvent(new DeliveryEvent(c.getAddress(),c.getDistance()));
 		};
 		subscribeEvent(CompleteOrderEvent.class, complete);
 	}

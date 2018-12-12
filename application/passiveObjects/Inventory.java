@@ -1,6 +1,5 @@
 package bgu.spl.mics.application.passiveObjects;
 
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -63,8 +62,6 @@ public class Inventory {
 		}
 	}
 	
-	
-	
 	/**
      * Checks if a certain book is available in the inventory.
      * <p>
@@ -84,7 +81,7 @@ public class Inventory {
 	/**
      *
      * <p>
-     * Prints to a file name @filename a serialized object HashMap<String,Integer> which is a Map of all the books in the inventory. The keys of the Map (type {@link String})
+     * Prints to a file name @filename a serialized object HashMap<SellingService,Integer> which is a Map of all the books in the inventory. The keys of the Map (type {@link String})
      * should be the titles of the books while the values (type {@link Integer}) should be
      * their respective available amount in the inventory. 
      * This method is called by the main method in order to generate the output.

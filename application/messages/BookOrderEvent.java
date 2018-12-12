@@ -1,17 +1,17 @@
 package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Event;
+import bgu.spl.mics.application.passiveObjects.BookInventoryInfo;
 
-public class BookOrderEvent implements Event {
+public class BookOrderEvent implements Event<Boolean>{
 
-    private int price;
+    private BookInventoryInfo book;
 
-    public BookOrderEvent(int price) {
-        this.price = price;
+    public BookOrderEvent(BookInventoryInfo book) {
+        this.book=book;
     }
 
-    public int getPrice() {
-        return price;
-    }
+    public BookInventoryInfo getBook() { return book; }
+
 
 }

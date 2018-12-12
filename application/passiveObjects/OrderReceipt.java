@@ -1,7 +1,5 @@
 package bgu.spl.mics.application.passiveObjects;
 
-import bgu.spl.mics.application.services.SellingService;
-
 import java.io.Serializable;
 
 /**
@@ -12,14 +10,14 @@ import java.io.Serializable;
  * You may add fields and methods to this class as you see fit (including public methods).
  */
 public class OrderReceipt implements Serializable {
-	int orderId;
-	BookInventoryInfo book;
-	Customer customer;
-	SellingService sellingService;
+	private int orderId;
+	private BookInventoryInfo book;
+	private Customer customer;
+	private String sellingService;
 	/**
 	 * Public Constructor
 	 */
-	public OrderReceipt(int orderId, Customer customer, BookInventoryInfo book, SellingService sellingService){
+	public OrderReceipt(int orderId, Customer customer, BookInventoryInfo book, String sellingService){
 		this.orderId=orderId;
 		this.customer=customer;
 		this.book=book;
@@ -33,7 +31,7 @@ public class OrderReceipt implements Serializable {
 	/**
 	 * Retrieves the name of the selling service which handled the order.
 	 */
-	public String getSeller() { return sellingService.getName(); }
+	public String getSeller() { return sellingService; }
 
 	/**
 	 * Retrieves the ID of the customer to which this receipt is issued to.
@@ -76,7 +74,7 @@ public class OrderReceipt implements Serializable {
 	}
 
 	/**
-	 * @return a String describing the object
+	 * @return a SellingService describing the object
 	 */
 	public String toString(){
 		return "Order Id: " + orderId +", Book name: " + book.getBookTitle() + ", Customer's name: " + customer.getName();
