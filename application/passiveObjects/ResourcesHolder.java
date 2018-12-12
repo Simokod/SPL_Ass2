@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.passiveObjects;
 
 import bgu.spl.mics.Future;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Passive object representing the resource manager.
@@ -14,6 +15,12 @@ import bgu.spl.mics.Future;
 public class ResourcesHolder {
 
 	private static ResourcesHolder instance = new ResourcesHolder();
+	private ConcurrentLinkedQueue<DeliveryVehicle> vehiclesQ;
+
+	/**
+	 * Constructor
+	 */
+	private ResourcesHolder() { vehiclesQ = new ConcurrentLinkedQueue<>(); }
 
 	/**
      * Retrieves the single instance of this class.
@@ -28,8 +35,16 @@ public class ResourcesHolder {
      * 			{@link DeliveryVehicle} when completed.   
      */
 	public Future<DeliveryVehicle> acquireVehicle() {
-		//TODO: Implement this
-		return null;
+		Future<DeliveryVehicle> futureVehicle = new Future<>();	//TODO: not good
+		try {
+			while(vehiclesQ.isEmpty())
+				this.wait();
+			futureVehicle.resolve(vehiclesQ.poll());
+			this.notifyAll();
+		} catch (InterruptedException e) {
+			System.out.println("interrupted while waiting for a vehicle");
+		}
+		return futureVehicle;
 	}
 	
 	/**
@@ -39,7 +54,8 @@ public class ResourcesHolder {
      * @param vehicle	{@link DeliveryVehicle} to be released.
      */
 	public void releaseVehicle(DeliveryVehicle vehicle) {
-		//TODO: Implement this
+		vehiclesQ.offer(vehicle);
+		this.notifyAll();
 	}
 
 	/**
@@ -48,7 +64,8 @@ public class ResourcesHolder {
      * @param vehicles	Array of {@link DeliveryVehicle} instances to store.
      */
 	public void load(DeliveryVehicle[] vehicles) {
-		//TODO: Implement this
+		for(DeliveryVehicle vehicle: vehicles)
+			vehiclesQ.offer(vehicle);
 	}
 
 }
