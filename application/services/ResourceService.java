@@ -16,20 +16,22 @@ import bgu.spl.mics.application.passiveObjects.*;
 public class ResourceService extends MicroService{
 
 	private ResourcesHolder resources;
-
-	public ResourceService() {
-		super("Change_This_Name");
+	private String name;
+	public ResourceService(String name) {
+		super(name);
 		resources = ResourcesHolder.getInstance();
 	}
 
 	@Override
 	protected void initialize() {
+		// Trying to acquire a vehicle
 		Callback<AcquireVehicleEvent> tryAcquireVehicle = (e) -> {
 			Future<DeliveryVehicle> futureVehicle = resources.acquireVehicle();
 			complete(e, futureVehicle.get());
 		};
 		subscribeEvent(AcquireVehicleEvent.class, tryAcquireVehicle);
 
+		// Releasing a vehicle after delivery is complete
 		Callback<ReleaseVehicleEvent> releaseVehicle = (e) -> {
 			resources.releaseVehicle(e.getVehicle());
 		};

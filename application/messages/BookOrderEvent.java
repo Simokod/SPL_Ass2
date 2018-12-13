@@ -2,16 +2,23 @@ package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Event;
 import bgu.spl.mics.application.passiveObjects.BookInventoryInfo;
+import bgu.spl.mics.application.passiveObjects.Customer;
 
 public class BookOrderEvent implements Event<Boolean>{
 
-    private BookInventoryInfo book;
+    private String book;
+    private Customer c;
+    private int orderTick;
 
-    public BookOrderEvent(BookInventoryInfo book) {
-        this.book=book;
+    public BookOrderEvent(String book, Customer c, int orderTick) {
+        this.book = book;
+        this.c = c;
+        this.orderTick = orderTick;
     }
 
-    public BookInventoryInfo getBook() { return book; }
+    public String getBook() { return book; }
+
+    public Customer getCustomer() { return c; }
 
 
 }

@@ -20,28 +20,28 @@ import java.io.Serializable;
  */
 public class SellingService extends MicroService implements Serializable {
 
-	MoneyRegister register;
-	private Customer c;
+	private MoneyRegister moneyRegister;
+	private String name;
 
-	public SellingService(Customer c) {
-		super("sellingService");
-		register=MoneyRegister.getInstance();
-		this.c=c;
+	public SellingService(String name) {
+		super(name);
+		moneyRegister=MoneyRegister.getInstance();
 	}
 
 	@Override
 	protected void initialize() {
 		Callback<BookOrderEvent> order = (orderEvent) -> {
-
-			synchronized (orderEvent.getBook()) {
-				BookInventoryInfo book=orderEvent.getBook();
-				Future<Integer> priceIfOrderPossible = sendEvent(new CheckAvailabilityEvent(book.getBookTitle()));
+			Future<BookInventoryInfo> bookInfo = sendEvent(new getBookInventoryInfoEvent(orderEvent.getBook()));
+			synchronized (bookInfo.get()) {
+				BookInventoryInfo book = bookInfo.get();
+				Future<Integer> priceIfOrderPossible = sendEvent(new CheckAvailabilityEvent(book));
 				if (priceIfOrderPossible.get() != -1) {
-					register.chargeCreditCard(c, priceIfOrderPossible.get());
+					moneyRegister.chargeCreditCard(orderEvent.getCustomer(), priceIfOrderPossible.get());
 					CompleteOrderEvent completeOrder = new CompleteOrderEvent(this.getName(), book);
 					Future<OrderReceipt> receipt = sendEvent(completeOrder);
-					register.file(receipt.get());
-				} else
+					moneyRegister.file(receipt.get());
+				}
+				else
 					sendEvent(new CancelOrderEvent());
 			}
 		};

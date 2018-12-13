@@ -11,17 +11,19 @@ import java.io.Serializable;
  */
 public class OrderReceipt implements Serializable {
 	private int orderId;
-	private BookInventoryInfo book;
+	private String bookTitle;
+	private int price;
 	private Customer customer;
 	private String sellingService;
 	/**
 	 * Public Constructor
 	 */
-	public OrderReceipt(int orderId, Customer customer, BookInventoryInfo book, String sellingService){
-		this.orderId=orderId;
-		this.customer=customer;
-		this.book=book;
-		this.sellingService=sellingService;
+	public OrderReceipt(int orderId, Customer customer, String bookTitle, int price, String sellingService){
+		this.orderId = orderId;
+		this.customer = customer;
+		this.bookTitle = bookTitle;
+		this.sellingService = sellingService;
+		this.price = price;
 	}
 	/**
 	 * Retrieves the orderId of this receipt.
@@ -43,12 +45,12 @@ public class OrderReceipt implements Serializable {
 	/**
 	 * Retrieves the name of the book which was bought.
 	 */
-	public String getBookTitle() { return book.getBookTitle(); }
+	public String getBookTitle() { return bookTitle; }
 
 	/**
 	 * Retrieves the price the customer paid for the book.
 	 */
-	public int getPrice() { return book.getPrice(); }
+	public int getPrice() { return price; }
 
 	/**
 	 * Retrieves the tick in which this receipt was issued.
@@ -73,10 +75,10 @@ public class OrderReceipt implements Serializable {
 		return 0;
 	}
 
-	/**
-	 * @return a SellingService describing the object
-	 */
-	public String toString(){
-		return "Order Id: " + orderId +", Book name: " + book.getBookTitle() + ", Customer's name: " + customer.getName();
-	}
+//	/**		TODO remove this toString
+//	 * @return a SellingService describing the object
+//	 */
+//	public String toString(){
+//		return "Order Id: "+orderId+", Book Title: "+bookTitle+"price: "+price+", Customer's name: " + customer.getName();
+//	}
 }

@@ -1,11 +1,12 @@
 package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Event;
+import bgu.spl.mics.application.passiveObjects.BookInventoryInfo;
 
 public class CheckAvailabilityEvent implements Event<Integer> {
-    private String name;
+    private BookInventoryInfo name;
 
-    public CheckAvailabilityEvent(String name){this.name=name;}
+    public CheckAvailabilityEvent(BookInventoryInfo name){ this.name=name; }
 
-    public String getName() { return this.name; }
+    public BookInventoryInfo getName() { return this.name; }
 }

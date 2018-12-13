@@ -10,13 +10,13 @@ import java.io.Serializable;
  */
 public class BookInventoryInfo implements Serializable {
 
-	private final String bookTitle;
-	private int amountInInventory;
-	private final int price;
+	private String bookTitle;
+	private int amount;
+	private int price;
 
 	BookInventoryInfo(String bookTitle, int amountInInventory, int price){
 		this.bookTitle=bookTitle;
-		this.amountInInventory=amountInInventory;
+		this.amount=amountInInventory;
 		this.price=price;
 	}
 	/**
@@ -34,7 +34,7 @@ public class BookInventoryInfo implements Serializable {
      * @return amount of available books.      
      */
 	public int getAmountInInventory() {
-		return amountInInventory;
+		return amount;
 	}
 
 	/**
@@ -50,14 +50,14 @@ public class BookInventoryInfo implements Serializable {
 	 * Reduces the amount of this book in the store's inventory by 1
 	 */
 	public void take(){
-			amountInInventory--;
+			amount--;
 	}
 
 	/**
 	 * @return a string describing the book
 	 */
 	public String toString(){
-		return "Book name: "+bookTitle+", Amount in inventory: "+amountInInventory+", Price: "+price;
+		return "Book name: "+bookTitle+", Amount in inventory: "+amount+", Price: "+price;
 	}
 	
 }

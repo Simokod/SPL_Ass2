@@ -15,13 +15,13 @@ import java.util.LinkedList;
  */
 public class Customer implements Serializable {
 
-	private String name;
 	private int id;
+	private String name;
 	private String address;
 	private int distance;
-	private List<OrderReceipt> receiptList;
-	private int availableCreditAmount;
 	private int creditNumber;
+	private int availableCreditAmount;
+	private List<OrderReceipt> receiptList;
 
 	/**
 	 * constructor for the Customer class

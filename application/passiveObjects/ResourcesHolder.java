@@ -35,14 +35,15 @@ public class ResourcesHolder {
      * 			{@link DeliveryVehicle} when completed.   
      */
 	public Future<DeliveryVehicle> acquireVehicle() {
-		Future<DeliveryVehicle> futureVehicle = new Future<>();	//TODO: not good
-		try {
-			while(vehiclesQ.isEmpty())
-				this.wait();
-			futureVehicle.resolve(vehiclesQ.poll());
-			this.notifyAll();
-		} catch (InterruptedException e) {
-			System.out.println("interrupted while waiting for a vehicle");
+		Future<DeliveryVehicle> futureVehicle = new Future<>();
+		synchronized (vehiclesQ) {
+			try {
+				while(vehiclesQ.isEmpty())
+					this.wait();
+				futureVehicle.resolve(vehiclesQ.poll());
+			} catch (InterruptedException e) {
+				System.out.println("interrupted while waiting for a vehicle");
+			}
 		}
 		return futureVehicle;
 	}

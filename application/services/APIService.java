@@ -4,6 +4,7 @@ import bgu.spl.mics.application.messages.*;
 import bgu.spl.mics.application.passiveObjects.*;
 import bgu.spl.mics.*;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -18,25 +19,24 @@ import java.util.LinkedList;
 public class APIService extends MicroService{
 
 	private Customer c;
-	int orderId;					//TODO: move to main
-	LinkedList<BookInventoryInfo> orderList;
+	private HashMap<String, Integer> orderList;
+	private int orderId;
 
-	public APIService(String name, Customer c, int orderId, LinkedList<BookInventoryInfo> orderList) {
+	public APIService(String name, int orderId, Customer c, HashMap<String, Integer> orderList) {
 		super(name);
 		this.c = c;
-		this.orderId=orderId;
-		this.orderList=orderList;
+		this.orderList = orderList;
+		this.orderId = orderId;
 	}
 
 	@Override
 	protected void initialize() {
-		//subscribeBroadcast(TimeTick.class, timeCB -> () );
+		subscribeBroadcast(TimeTickBroadcast.class, timeCB -> {} );	// TODO: this also
 
 		subscribeEvent(CancelOrderEvent.class, cancel -> {/**/}) ;	// TODO: fix this shit
 
-		for (BookInventoryInfo book:orderList) {
-			sendEvent(new BookOrderEvent(book));
-		}
+		// sending Book Order Events    		TODO: check what about tick
+		orderList.forEach((name,tick) -> sendEvent(new BookOrderEvent(name, c, tick)));
 
 		//CheckBankAccountEvent handler
 		Callback<CheckBankAccountEvent> checkBankAcc;
@@ -51,7 +51,7 @@ public class APIService extends MicroService{
 			OrderReceipt receipt= new OrderReceipt(orderId, c, completeOrderEvent.getBook(), completeOrderEvent.getSeller());
 			c.getCustomerReceiptList().add(receipt);
 			complete(completeOrderEvent, receipt);
-			//sendEvent(new DeliveryEvent(c.getAddress(),c.getDistance()));
+			sendEvent(new DeliveryEvent(c.getAddress(),c.getDistance()));
 		};
 		subscribeEvent(CompleteOrderEvent.class, complete);
 	}

@@ -23,7 +23,7 @@ public class TimeService extends MicroService{
 	private Timer timer;
 
 	public TimeService(int speed, int duration) {
-		super("Change_This_Name");
+		super("TimeService");
 		this.speed = speed;
 		this.duration = duration+1;
 		this.currentTime = 1;
@@ -46,5 +46,4 @@ public class TimeService extends MicroService{
 
 		timer.scheduleAtFixedRate(tick, 0, speed);
 	}
-
 }
