@@ -1,6 +1,5 @@
 package bgu.spl.mics;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -13,17 +12,15 @@ import java.util.concurrent.TimeUnit;
  */
 public class Future<T> {
 
-	//Fields
+	// Fields
 	private T resolve;
 	private boolean resolved;
-	private CountDownLatch latch;
 
 	/**
 	 * This should be the the only public constructor in this class.
 	 */
 	public Future() {
-		resolved=false;
-		latch=new CountDownLatch(1);
+		resolved = false;
 	}
 
 	/**
@@ -35,10 +32,13 @@ public class Future<T> {
 	 *
 	 */
 	public synchronized T get() {
-		try {
-			latch.await();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		while(!resolved)
+		{
+			try {
+				this.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		return resolve;
 	}
@@ -47,9 +47,9 @@ public class Future<T> {
 	 * Resolves the result of this Future object.
 	 */
 	public synchronized void resolve (T result) {
-		resolve=result;
-		resolved=true;
-		latch.countDown();
+		resolve = result;
+		resolved = true;
+		this.notifyAll();
 	}
 
 	/**
@@ -69,12 +69,12 @@ public class Future<T> {
 	 *         elapsed, return null.
 	 */
 	public synchronized T get(long timeout, TimeUnit unit) {
-		try {
-			if (latch.await(timeout, unit))
-				return resolve;
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		return null;
+		while (!resolved)
+			try {
+				this.wait(timeout, ((int)unit.toMillis(timeout)));
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		return resolve;
 	}
 }

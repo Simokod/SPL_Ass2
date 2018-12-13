@@ -1,11 +1,11 @@
 package bgu.spl.mics;
 
-
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
  * Write your implementation here!
@@ -14,17 +14,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class MessageBusImpl implements MessageBus {
 
 	private static MessageBusImpl instance = new MessageBusImpl();
-	private HashMap<MicroService, LinkedBlockingQueue<Message>> msgQueues;						// a message queue for each ms
-	private HashMap<Class<? extends Event> , ConcurrentLinkedQueue<MicroService>> eventSubs;	// saving subs to events
-	private HashMap<Class<? extends Broadcast> , LinkedList<MicroService>> brdSubs;				// saving subs to broadcasts
-	private HashMap<Event, Future> eventFutures;
+	private ConcurrentHashMap<MicroService, LinkedBlockingQueue<Message>> msgQueues;					// a message queue for each ms
+	private ConcurrentHashMap<Class<? extends Event> , ConcurrentLinkedQueue<MicroService>> eventSubs;	// saving subs to events
+	private ConcurrentHashMap<Class<? extends Broadcast> , LinkedList<MicroService>> brdSubs;			// saving subs to broadcasts
+	private ConcurrentHashMap<Event, Future> eventFutures;
 
 	// Private Constructor
 	private MessageBusImpl(){
-		msgQueues = new HashMap<>();
-		eventSubs = new HashMap<>();
-		brdSubs = new HashMap<>();
-		eventFutures = new HashMap<>();
+		msgQueues = new ConcurrentHashMap<>();
+		eventSubs = new ConcurrentHashMap<>();
+		brdSubs = new ConcurrentHashMap<>();
+		eventFutures = new ConcurrentHashMap<>();
 	}
 
 	public static MessageBusImpl getInstance() { return MessageBusImpl.instance; }
@@ -41,34 +41,50 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public <T> void complete(Event<T> e, T result) {
-		while(eventFutures.get(e)==null);			// TODO: fix this
+		synchronized (eventFutures) {
+			while(eventFutures.get(e)==null)
+				try {
+					eventFutures.wait();
+				} catch (InterruptedException e1) {
+					System.out.println("interrupted while waiting for future");		// TODO: remove syso
+				}
+		}
 		eventFutures.get(e).resolve(result);
 	}
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
+		if(brdSubs.get(b.getClass())==null) {
+			System.out.println("no subs for this broadcast");                        //TODO: remove sout
+			return;
+		}
 		for(MicroService m: brdSubs.get(b.getClass()))
 			msgQueues.get(m).offer(b);
 	}
 
-
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		Class evCls = e.getClass();
-		if(eventSubs.get(evCls) ==null) {
-			System.out.println("no such queue");
+		Class eventClass = e.getClass();
+		if(eventSubs.get(eventClass)==null) {
+			System.out.println("no subs for this event");
 			return null;
 		}
-		msgQueues.get(eventSubs.get(evCls).peek()).offer(e);		// Adding the event to the microService in line
-		eventSubs.get(evCls).offer(eventSubs.get(evCls).poll());	// Moving the microService to the back of the queue according to round robin
-		Future<T> temp = new Future<>();							// Saving the future in order to resolve it in the future
-		eventFutures.put(e, temp);
+		msgQueues.get(eventSubs.get(eventClass).peek()).offer(e);			// Adding the event to the microService in line
+		eventSubs.get(eventClass).offer(eventSubs.get(eventClass).poll());	// Moving the microService to the back of the queue according to round robin
+		Future<T> temp = new Future<>();
+		synchronized (eventFutures) {
+			eventFutures.put(e, temp);
+			eventFutures.notifyAll();
+		}
 		return temp;
 	}
 
 	@Override
 	public void register(MicroService m) {
-		msgQueues.put(m, new LinkedBlockingQueue<>());
+		synchronized (msgQueues) {
+			msgQueues.put(m, new LinkedBlockingQueue<>());
+			msgQueues.notifyAll();
+		}
 	}
 
 	@Override
