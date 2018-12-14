@@ -21,7 +21,7 @@ import java.io.Serializable;
 public class SellingService extends MicroService implements Serializable {
 
 	private MoneyRegister moneyRegister;
-	private String name;
+	private int currentTick;
 
 	public SellingService(String name) {
 		super(name);
@@ -30,21 +30,27 @@ public class SellingService extends MicroService implements Serializable {
 
 	@Override
 	protected void initialize() {
+		// updating time according to TimeService
+		subscribeBroadcast(TimeTickBroadcast.class, time -> currentTick++ );
+
+		// checking if the book is in the inventory
 		Callback<BookOrderEvent> order = (orderEvent) -> {
-			Future<BookInventoryInfo> bookInfo = sendEvent(new getBookInventoryInfoEvent(orderEvent.getBook()));
-			synchronized (bookInfo.get()) {
-				BookInventoryInfo book = bookInfo.get();
-				Future<Integer> priceIfOrderPossible = sendEvent(new CheckAvailabilityEvent(book));
-				if (priceIfOrderPossible.get() != -1) {
-					moneyRegister.chargeCreditCard(orderEvent.getCustomer(), priceIfOrderPossible.get());
-					CompleteOrderEvent completeOrder = new CompleteOrderEvent(this.getName(), book);
-					Future<OrderReceipt> receipt = sendEvent(completeOrder);
-					moneyRegister.file(receipt.get());
-				}
-				else
-					sendEvent(new CancelOrderEvent());
+			int orderTick = orderEvent.getOrderTick();
+			int processTick = currentTick;
+			String bookTitle = orderEvent.getBook();
+			Future<Integer> priceIfOrderPossible = sendEvent(new CheckAvailabilityEvent(bookTitle));
+			// book is available
+			if (priceIfOrderPossible.get() != -1) {
+				moneyRegister.chargeCreditCard(orderEvent.getCustomer(), priceIfOrderPossible.get());
+				CompleteOrderEvent completeOrder =
+						new CompleteOrderEvent(this.getName(), bookTitle, priceIfOrderPossible.get(),
+								orderTick, processTick);
+				Future<OrderReceipt> receipt = sendEvent(completeOrder);
+				moneyRegister.file(receipt.get());
 			}
-		};
+			else	// book isn't available
+				sendEvent(new CancelOrderEvent());
+			};
 		subscribeEvent(BookOrderEvent.class, order);
 	}
 }

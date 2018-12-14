@@ -15,8 +15,6 @@ import bgu.spl.mics.application.passiveObjects.*;
  */
 public class LogisticsService extends MicroService {
 
-	private String name;
-
 	public LogisticsService(String name) {
 		super(name);
 	}

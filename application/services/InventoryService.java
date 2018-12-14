@@ -5,7 +5,6 @@ import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.*;
 import bgu.spl.mics.application.passiveObjects.*;
-import jdk.vm.ci.code.site.Call;
 
 /**
  * InventoryService is in charge of the book inventory and stock.
@@ -20,7 +19,6 @@ import jdk.vm.ci.code.site.Call;
 public class InventoryService extends MicroService{
 
 	private Inventory inventory;
-	private String name;
 
 	public InventoryService(String name) {
 		super(name);
@@ -29,18 +27,14 @@ public class InventoryService extends MicroService{
 
 	@Override
 	protected void initialize() {
-		// getting book name and returning a BookIventoryInfo object
-		Callback<getBookInventoryInfoEvent> getBook = (getBookEvent) -> {
-			complete(getBookEvent, inventory.);
-		};
 
 		Callback<CheckAvailabilityEvent> check = (checkAvailabilityEvent)-> {
 		int price = inventory.checkAvailabiltyAndGetPrice(checkAvailabilityEvent.getName());
 		if (price != -1) {
 			CheckBankAccountEvent checkAcc = new CheckBankAccountEvent(price);
-			Future<Boolean> has$ = sendEvent(checkAcc);			//@TODO: check for diarrhea leaks
-			if(has$.get()){
-				if(inventory.take(checkAvailabilityEvent.getName())== OrderResult.SUCCESSFULLY_TAKEN)
+			Future<Boolean> hasMoney = sendEvent(checkAcc);			//@TODO: check for diarrhea leaks
+			if(hasMoney.get()){
+				if(inventory.take(checkAvailabilityEvent.getName()) == OrderResult.SUCCESSFULLY_TAKEN)
 					complete(checkAvailabilityEvent, price);
 				else
 					complete(checkAvailabilityEvent, -1);

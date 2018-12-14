@@ -26,7 +26,7 @@ public class ExampleMessageSenderService extends MicroService {
         System.out.println("Sender " + getName() + " started");
         if (broadcast) {
             sendBroadcast(new ExampleBroadcast(getName()));
-            System.out.println("Sender " + getName() + " publish an event and terminate");
+            System.out.println("Sender " + getName() + " publish a broadcast and terminate");
             terminate();
         } else {
             Future<String> futureObject = (Future<String>)sendEvent(new ExampleEvent(getName()));

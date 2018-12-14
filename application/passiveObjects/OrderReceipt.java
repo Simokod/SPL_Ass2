@@ -15,15 +15,23 @@ public class OrderReceipt implements Serializable {
 	private int price;
 	private Customer customer;
 	private String sellingService;
+	private int issuedTick;
+	private int orderTick;
+	private int proccessTick;
+
 	/**
 	 * Public Constructor
 	 */
-	public OrderReceipt(int orderId, Customer customer, String bookTitle, int price, String sellingService){
+	public OrderReceipt(int orderId, String sellingService, Customer customer, String bookTitle, int price,
+						int issuedTick, int orderTick, int proccessTick){
 		this.orderId = orderId;
 		this.customer = customer;
 		this.bookTitle = bookTitle;
 		this.sellingService = sellingService;
 		this.price = price;
+		this.issuedTick = issuedTick;
+		this.orderTick = orderTick;
+		this.proccessTick = proccessTick;
 	}
 	/**
 	 * Retrieves the orderId of this receipt.
@@ -56,23 +64,22 @@ public class OrderReceipt implements Serializable {
 	 * Retrieves the tick in which this receipt was issued.
 	 */
 	public int getIssuedTick() {
-		// TODO Implement this
-		return 0; }
+		return issuedTick;
+	}
 
 	/**
 	 * Retrieves the tick in which the customer sent the purchase request.
 	 */
 	public int getOrderTick() {
-		// TODO Implement this
-		return 0;	}
+		return orderTick;
+	}
 
 	/**
 	 * Retrieves the tick in which the treating selling service started
 	 * processing the order.
 	 */
 	public int getProcessTick() {
-		// TODO Implement this
-		return 0;
+		return proccessTick;
 	}
 
 //	/**		TODO remove this toString
