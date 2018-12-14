@@ -7,6 +7,7 @@ import com.google.gson.stream.JsonReader;
 import java.io.FileReader;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** This is the Main class of the application. You should parse the input file,
  * create the different instances of the objects, and run the system.
@@ -64,7 +65,7 @@ public class BookStoreRunner {
             JsonPrimitive JsonResources = JsonServices.getAsJsonPrimitive("resourcesService");
             int amountOfResourcesServices = gson.fromJson(JsonResources, int.class);
             ResourceService[] resourceServices = new ResourceService[amountOfResourcesServices];
-            for(int i=0;i<amountOfLogisticsServices;i++)
+            for(int i=0;i<amountOfResourcesServices;i++)
                 resourceServices[i] = new ResourceService("Resource Service"+i);
 
             // creating customers list
@@ -75,14 +76,14 @@ public class BookStoreRunner {
                 customers[i] = JsonToCustomer(JsoncustomersList[i]);
             }
             // creating APIServices
-            int orderId=0;
+            AtomicInteger orderId = new AtomicInteger(0);
             APIService[] APIServices = new APIService[JsoncustomersList.length];
             for(int i=0;i<JsoncustomersList.length;i++) {
                 HashMap<String, Integer> orderList = new HashMap<>();
                 for(int j=0;i<JsoncustomersList[i].orderSchedule.length;i++)
                     orderList.put(JsoncustomersList[i].orderSchedule[j].bookTitle, JsoncustomersList[i].orderSchedule[j].tick);
                 APIServices[i] = new APIService("API Service" + i, orderId, customers[i], orderList);
-                orderId+=JsoncustomersList[i].orderSchedule.length;
+                orderId.addAndGet(JsoncustomersList[i].orderSchedule.length);
             }
 
             // TODO: initialize and run all services

@@ -1,7 +1,7 @@
 package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Event;
-
+            // sent by APIService, handled by LogisticsService
 public class DeliveryEvent implements Event<Boolean> {
 
     private String address;
