@@ -36,6 +36,7 @@ public class TimeService extends MicroService{
 			@Override
 			public void run() {
 				if(currentTime<duration) {
+					System.out.println("Current time: "+currentTime);		//TODO remove sout
 					sendBroadcast(new TimeTickBroadcast());
 					currentTime++;
 				}

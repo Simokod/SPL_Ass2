@@ -1,13 +1,11 @@
 package bgu.spl.mics.application;
 import bgu.spl.mics.MessageBusImpl;
-import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.*;
 import bgu.spl.mics.application.services.*;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
-
 import java.io.FileReader;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** This is the Main class of the application. You should parse the input file,
@@ -21,9 +19,6 @@ public class BookStoreRunner {
             Gson gson = new Gson();
             JsonReader reader = new JsonReader(new FileReader(filename));
             JsonObject input = gson.fromJson(reader, JsonObject.class);
-
-            //creating messageBus
-            MessageBusImpl messageBus=MessageBusImpl.getInstance();
 
             // creating initial inventory
             JsonArray JsoninitialInventory = input.getAsJsonArray("initialInventory");
@@ -42,79 +37,93 @@ public class BookStoreRunner {
 
             // creating TimeService
             JsonObject JsonTime = JsonServices.getAsJsonObject("time");
-            TimeService timeService = gson.fromJson(JsonTime, TimeService.class);
+            JsonPrimitive JsonSpeed = JsonTime.getAsJsonPrimitive("speed");
+            int speed = gson.fromJson(JsonSpeed, int.class);
+            JsonPrimitive JsonDuration = JsonTime.getAsJsonPrimitive("duration");
+            int duration = gson.fromJson(JsonDuration, int.class);
+            TimeService timeService = new TimeService(speed, duration);
+            Thread timeServiceT = new Thread(timeService);
 
             // creating SellingServices
             JsonPrimitive JsonSellings = JsonServices.getAsJsonPrimitive("selling");
             int amountOfSellingServices = gson.fromJson(JsonSellings, int.class);
-            SellingService[] sellingServices = new SellingService[amountOfSellingServices];
+            Thread[] sellingServices = new Thread[amountOfSellingServices];
             for(int i=0;i<amountOfSellingServices;i++)
-                sellingServices[i] = new SellingService("Selling Service"+i);
+                sellingServices[i] = new Thread(new SellingService("Selling Service " + (i + 1)));
 
             // creating InventoryServices
             JsonPrimitive JsonInventories = JsonServices.getAsJsonPrimitive("inventoryService");
             int amountOfInventoryServices = gson.fromJson(JsonInventories, int.class);
-            InventoryService[] inventoryServices = new InventoryService[amountOfInventoryServices];
+            Thread[] inventoryServices = new Thread[amountOfInventoryServices];
             for(int i=0;i<amountOfInventoryServices;i++)
-                inventoryServices[i] = new InventoryService("Inventory Service"+i);
+                inventoryServices[i] = new Thread(new InventoryService("Inventory Service " + (i + 1)));
 
             // creating LogisticsServices
             JsonPrimitive JsonLogistics = JsonServices.getAsJsonPrimitive("logistics");
             int amountOfLogisticsServices = gson.fromJson(JsonLogistics, int.class);
-            LogisticsService[] logisticsServices = new LogisticsService[amountOfLogisticsServices];
+            Thread[] logisticsServices = new Thread[amountOfLogisticsServices];
             for(int i=0;i<amountOfLogisticsServices;i++)
-                logisticsServices[i] = new LogisticsService("Logistics Service"+i);
+                logisticsServices[i] = new Thread(new LogisticsService("Logistics Service "+(i+1)));
 
             // creating ResourceServices
             JsonPrimitive JsonResources = JsonServices.getAsJsonPrimitive("resourcesService");
             int amountOfResourcesServices = gson.fromJson(JsonResources, int.class);
-            ResourceService[] resourceServices = new ResourceService[amountOfResourcesServices];
+            Thread[] resourceServices = new Thread[amountOfResourcesServices];
             for(int i=0;i<amountOfResourcesServices;i++)
-                resourceServices[i] = new ResourceService("Resource Service"+i);
+                resourceServices[i] = new Thread(new ResourceService("Resource Service "+(i+1)));
 
             // creating customers list
             JsonArray JsonArrCustomers = JsonServices.getAsJsonArray("customers");
-            JsonCustomer[] JsoncustomersList = gson.fromJson(JsonArrCustomers, JsonCustomer[].class);
-            Customer[] customers = new Customer[JsoncustomersList.length];
-            for(int i=0;i<JsoncustomersList.length;i++) {
-                customers[i] = JsonToCustomer(JsoncustomersList[i]);
+            JsonCustomer[] JsonCustomersList = gson.fromJson(JsonArrCustomers, JsonCustomer[].class);
+            int amountOfCustomers = JsonCustomersList.length;
+            Customer[] customers = new Customer[amountOfCustomers];
+            for(int i=0;i<amountOfCustomers;i++) {
+                customers[i] = JsonToCustomer(JsonCustomersList[i]);
             }
             // creating APIServices
             AtomicInteger orderId = new AtomicInteger(0);
-            APIService[] APIServices = new APIService[JsoncustomersList.length];
-            for(int i=0;i<JsoncustomersList.length;i++) {
-                HashMap<String, Integer> orderList = new HashMap<>();
-                for(int j=0;i<JsoncustomersList[i].orderSchedule.length;i++)
-                    orderList.put(JsoncustomersList[i].orderSchedule[j].bookTitle, JsoncustomersList[i].orderSchedule[j].tick);
-                APIServices[i] = new APIService("API Service" + i, orderId, customers[i], orderList);
-                orderId.addAndGet(JsoncustomersList[i].orderSchedule.length);
+            Thread[] APIServices = new Thread[amountOfCustomers];
+            for(int i=0;i<amountOfCustomers;i++) {
+                LinkedList<OrderPair> orderList = new LinkedList<>();
+                for(int j=0;j<JsonCustomersList[i].orderSchedule.length;j++)
+                    orderList.add(new OrderPair(JsonCustomersList[i].orderSchedule[j].bookTitle, JsonCustomersList[i].orderSchedule[j].tick));
+                APIServices[i] = new Thread(new APIService("API Service " + (i+1), orderId, customers[i], orderList));
+                orderId.addAndGet(JsonCustomersList[i].orderSchedule.length);
             }
 
 
             // TODO: initialize and run all services
-            runServices(APIServices);
             runServices(sellingServices);
             runServices(inventoryServices);
             runServices(logisticsServices);
             runServices(resourceServices);
-
+            runServices(APIServices);
             //runs and initializes time service after all of the other services has been initialized
-            while (!(isSubscribedToTime(messageBus,APIServices)&isSubscribedToTime(messageBus,sellingServices)));
-            timeService.run();
+            Thread.sleep(1000);     // TODO: need to make sure all other services have initialized
+//            while (!(isSubscribedToTime(APIServices) & isSubscribedToTime(sellingServices))) ;
+            System.out.println("starting time");
+                timeServiceT.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    //initializes an array of MicroServices
-    private static void runServices(MicroService[] services){
+    // initializes an array of MicroServices
+    private static void runServices(Thread[] services){
         for (int i=0;i<services.length;i++)
-            services[i].run();
+            services[i].start();
     }
-
-    private static boolean isSubscribedToTime(MessageBusImpl bus ,MicroService[] services){
+    // checking if all APIServices have subscribed to time Broadcast
+    private static boolean isSubscribedToTime(APIService[] services){
         for (int i=0;i<services.length;i++)
-            if(!bus.isSubscribedToTimeTick(services[i]))
+            if(!services[i].isSubscribedToTime())
+                return false;
+        return true;
+    }
+    // checking if all SellingServices have subscribed to time Broadcast
+    private static boolean isSubscribedToTime(SellingService[] services){
+        for (int i=0;i<services.length;i++)
+            if(!services[i].isSubscribedToTime())
                 return false;
         return true;
     }
@@ -142,3 +151,4 @@ class JsonCustomer{
         public int tick;
     }
 }
+

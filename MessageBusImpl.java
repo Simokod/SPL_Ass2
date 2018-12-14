@@ -31,15 +31,6 @@ public class MessageBusImpl implements MessageBus {
 
 	public static MessageBusImpl getInstance() { return MessageBusImpl.instance; }
 
-	public boolean isSubscribedToTimeTick(MicroService service){
-		LinkedList<MicroService> list= brdSubs.get(TimeTick.class);
-		for (MicroService m:list) {
-			if (m.equals(service))
-				return true;
-		}
-		return false;
-	}
-
 	@Override
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
 		eventSubs.computeIfAbsent(type, k -> new ConcurrentLinkedQueue<>()).add(m);

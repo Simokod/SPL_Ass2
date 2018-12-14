@@ -4,8 +4,7 @@ import bgu.spl.mics.Callback;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.*;
 import bgu.spl.mics.application.passiveObjects.*;
-
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -20,26 +19,33 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class APIService extends MicroService{
 
 	private Customer c;
-	private HashMap<String, Integer> orderList;
+	private LinkedList<OrderPair> orderList;
 	private AtomicInteger orderId;
 	private int currentTick;
+	private boolean isTimed;
 
-	public APIService(String name, AtomicInteger orderId, Customer c, HashMap<String, Integer> orderList) {
+	public APIService(String name, AtomicInteger orderId, Customer c, LinkedList<OrderPair> orderList) {
 		super(name);
 		this.c = c;
 		this.orderList = orderList;
 		this.orderId = orderId;
+		this.isTimed = false;
 	}
 
 	@Override
 	protected void initialize() {
 		// updating time according to TimeService
-		subscribeBroadcast(TimeTickBroadcast.class, timeBC -> currentTick++ );
+		subscribeBroadcast(TimeTickBroadcast.class, timeBC -> {
+			currentTick++;
+			// sending Book Order Events
+			for(OrderPair order: orderList)
+				if(order.getOrderTick() == currentTick)
+					sendEvent(new BookOrderEvent(order.getBookTitle(), c, currentTick));
+		});
+		isTimed = true;
 
+		// canceling order because of inventory or bank account
 		subscribeEvent(CancelOrderEvent.class, cancel -> {/**/}) ;	// TODO: fix this shit
-
-		// sending Book Order Events    		TODO: check what about tick
-		orderList.forEach((name,orderTick) -> sendEvent(new BookOrderEvent(name, c, orderTick)));
 
 		// CheckBankAccountEvent handler
 		Callback<CheckBankAccountEvent> checkBankAcc = (checkAccEvent) ->
@@ -66,4 +72,5 @@ public class APIService extends MicroService{
 		};
 		subscribeEvent(CompleteOrderEvent.class, complete);
 	}
+	public boolean isSubscribedToTime() { return isTimed; }
 }

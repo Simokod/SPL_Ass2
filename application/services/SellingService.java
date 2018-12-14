@@ -22,17 +22,20 @@ public class SellingService extends MicroService implements Serializable {
 
 	private MoneyRegister moneyRegister;
 	private int currentTick;
+	private boolean isTimed;
 
 	public SellingService(String name) {
 		super(name);
 		moneyRegister=MoneyRegister.getInstance();
 		currentTick=0;
+		isTimed = false;
 	}
 
 	@Override
 	protected void initialize() {
 		// updating time according to TimeService
 		subscribeBroadcast(TimeTickBroadcast.class, time -> currentTick++ );
+		isTimed = true;
 
 		// checking if the book is in the inventory
 		Callback<BookOrderEvent> order = (orderEvent) -> {
@@ -54,4 +57,6 @@ public class SellingService extends MicroService implements Serializable {
 			};
 		subscribeEvent(BookOrderEvent.class, order);
 	}
+
+	public boolean isSubscribedToTime() { return isTimed; }
 }
