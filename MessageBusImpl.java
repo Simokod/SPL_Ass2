@@ -1,5 +1,7 @@
 package bgu.spl.mics;
 
+import bgu.spl.mics.application.messages.TimeTick;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +30,15 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	public static MessageBusImpl getInstance() { return MessageBusImpl.instance; }
+
+	public boolean isSubscribedToTimeTick(MicroService service){
+		LinkedList<MicroService> list= brdSubs.get(TimeTick.class);
+		for (MicroService m:list) {
+			if (m.equals(service))
+				return true;
+		}
+		return false;
+	}
 
 	@Override
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {

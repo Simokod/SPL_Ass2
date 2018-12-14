@@ -26,6 +26,7 @@ public class SellingService extends MicroService implements Serializable {
 	public SellingService(String name) {
 		super(name);
 		moneyRegister=MoneyRegister.getInstance();
+		currentTick=0;
 	}
 
 	@Override

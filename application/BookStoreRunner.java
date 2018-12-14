@@ -1,4 +1,6 @@
 package bgu.spl.mics.application;
+import bgu.spl.mics.MessageBusImpl;
+import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.*;
 import bgu.spl.mics.application.services.*;
 import com.google.gson.*;
@@ -6,7 +8,6 @@ import com.google.gson.stream.JsonReader;
 
 import java.io.FileReader;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** This is the Main class of the application. You should parse the input file,
@@ -20,6 +21,9 @@ public class BookStoreRunner {
             Gson gson = new Gson();
             JsonReader reader = new JsonReader(new FileReader(filename));
             JsonObject input = gson.fromJson(reader, JsonObject.class);
+
+            //creating messageBus
+            MessageBusImpl messageBus=MessageBusImpl.getInstance();
 
             // creating initial inventory
             JsonArray JsoninitialInventory = input.getAsJsonArray("initialInventory");
@@ -86,10 +90,33 @@ public class BookStoreRunner {
                 orderId.addAndGet(JsoncustomersList[i].orderSchedule.length);
             }
 
+
             // TODO: initialize and run all services
+            runServices(APIServices);
+            runServices(sellingServices);
+            runServices(inventoryServices);
+            runServices(logisticsServices);
+            runServices(resourceServices);
+
+            //runs and initializes time service after all of the other services has been initialized
+            while (!(isSubscribedToTime(messageBus,APIServices)&isSubscribedToTime(messageBus,sellingServices)));
+            timeService.run();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    //initializes an array of MicroServices
+    private static void runServices(MicroService[] services){
+        for (int i=0;i<services.length;i++)
+            services[i].run();
+    }
+
+    private static boolean isSubscribedToTime(MessageBusImpl bus ,MicroService[] services){
+        for (int i=0;i<services.length;i++)
+            if(!bus.isSubscribedToTimeTick(services[i]))
+                return false;
+        return true;
     }
 
     private static Customer JsonToCustomer(JsonCustomer cust){
