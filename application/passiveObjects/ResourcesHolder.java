@@ -57,7 +57,7 @@ public class ResourcesHolder {
 	public void releaseVehicle(DeliveryVehicle vehicle) {
 		synchronized (vehiclesQ) {
 			vehiclesQ.offer(vehicle);
-			this.notifyAll();
+			vehiclesQ.notifyAll();
 		}
 	}
 

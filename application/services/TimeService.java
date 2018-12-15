@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.TerminateAllBroadcast;
 import bgu.spl.mics.application.messages.TimeTickBroadcast;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -21,6 +22,7 @@ public class TimeService extends MicroService{
 	private int duration;
 	private int currentTime;
 	private Timer timer;
+	private boolean isFinished;
 
 	public TimeService(int speed, int duration) {
 		super("TimeService");
@@ -28,6 +30,7 @@ public class TimeService extends MicroService{
 		this.duration = duration+1;
 		this.currentTime = 1;
 		this.timer = new Timer();
+		this.isFinished = false;
 	}
 
 	@Override
@@ -40,11 +43,16 @@ public class TimeService extends MicroService{
 					sendBroadcast(new TimeTickBroadcast());
 					currentTime++;
 				}
-				else
+				else {
+					sendBroadcast(new TerminateAllBroadcast());
 					timer.cancel();
+					isFinished = true;
+					terminate();
+				}
 			}
 		};
 
 		timer.scheduleAtFixedRate(tick, 0, speed);
 	}
+	public boolean isFinished() { return isFinished; }
 }

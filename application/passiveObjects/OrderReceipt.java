@@ -10,6 +10,7 @@ import java.io.Serializable;
  * You may add fields and methods to this class as you see fit (including public methods).
  */
 public class OrderReceipt implements Serializable {
+
 	private int orderId;
 	private String bookTitle;
 	private int price;
@@ -17,13 +18,14 @@ public class OrderReceipt implements Serializable {
 	private String sellingService;
 	private int issuedTick;
 	private int orderTick;
-	private int proccessTick;
+	private int processTick;
+	private static long serialVersionUID = 335114239;
 
 	/**
 	 * Public Constructor
 	 */
 	public OrderReceipt(int orderId, String sellingService, Customer customer, String bookTitle, int price,
-						int issuedTick, int orderTick, int proccessTick){
+						int issuedTick, int orderTick, int processTick){
 		this.orderId = orderId;
 		this.customer = customer;
 		this.bookTitle = bookTitle;
@@ -31,7 +33,7 @@ public class OrderReceipt implements Serializable {
 		this.price = price;
 		this.issuedTick = issuedTick;
 		this.orderTick = orderTick;
-		this.proccessTick = proccessTick;
+		this.processTick = processTick;
 	}
 	/**
 	 * Retrieves the orderId of this receipt.
@@ -79,13 +81,11 @@ public class OrderReceipt implements Serializable {
 	 * processing the order.
 	 */
 	public int getProcessTick() {
-		return proccessTick;
+		return processTick;
 	}
 
-//	/**		TODO remove this toString
-//	 * @return a SellingService describing the object
-//	 */
-//	public String toString(){
-//		return "Order Id: "+orderId+", Book Title: "+bookTitle+"price: "+price+", Customer's name: " + customer.getName();
-//	}
+	public String toString() {
+		return "orderId: "+orderId+",customer's name: "+customer.getName()+", BookTitle: "+bookTitle+
+				", IssuedTick: "+issuedTick+", OrderTick: "+orderTick+", ProcessTick: "+processTick+"\n";
+	}
 }

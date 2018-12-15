@@ -20,16 +20,16 @@ public class APIService extends MicroService{
 
 	private Customer c;
 	private LinkedList<OrderPair> orderList;
-	private AtomicInteger orderId;
+	private int orderId;
 	private int currentTick;
-	private boolean isTimed;
+	private boolean isInitialized;
 
-	public APIService(String name, AtomicInteger orderId, Customer c, LinkedList<OrderPair> orderList) {
+	public APIService(String name, int orderId, Customer c, LinkedList<OrderPair> orderList) {
 		super(name);
 		this.c = c;
 		this.orderList = orderList;
 		this.orderId = orderId;
-		this.isTimed = false;
+		this.isInitialized = false;
 	}
 
 	@Override
@@ -42,7 +42,9 @@ public class APIService extends MicroService{
 				if(order.getOrderTick() == currentTick)
 					sendEvent(new BookOrderEvent(order.getBookTitle(), c, currentTick));
 		});
-		isTimed = true;
+
+		// terminate this when received
+		subscribeBroadcast(TerminateAllBroadcast.class, t -> terminate());
 
 		// canceling order because of inventory or bank account
 		subscribeEvent(CancelOrderEvent.class, cancel -> {/**/}) ;	// TODO: fix this shit
@@ -61,8 +63,10 @@ public class APIService extends MicroService{
 			int price = completeOrderEvent.getPrice();
 			int orderTick = completeOrderEvent.getOrderTick();
 			int proccessTick = completeOrderEvent.getProcessTick();
-			OrderReceipt receipt= new OrderReceipt(orderId.getAndIncrement(), seller, c, bookTitle, price,
+			OrderReceipt receipt= new OrderReceipt(orderId, seller, c, bookTitle, price,
 													currentTick, orderTick, proccessTick);
+			orderId++;
+
 
 			synchronized (c) {
 				c.getCustomerReceiptList().add(receipt);
@@ -71,6 +75,8 @@ public class APIService extends MicroService{
 			sendEvent(new DeliveryEvent(c.getAddress(),c.getDistance()));
 		};
 		subscribeEvent(CompleteOrderEvent.class, complete);
+		// signaling that the Micro Service has initialized
+		isInitialized = true;
 	}
-	public boolean isSubscribedToTime() { return isTimed; }
+	public boolean isInitialized() { return isInitialized; }
 }

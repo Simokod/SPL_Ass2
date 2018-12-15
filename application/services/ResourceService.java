@@ -16,14 +16,19 @@ import bgu.spl.mics.application.passiveObjects.*;
 public class ResourceService extends MicroService{
 
 	private ResourcesHolder resources;
+	private boolean isInitialized;
 
 	public ResourceService(String name) {
 		super(name);
 		resources = ResourcesHolder.getInstance();
+		isInitialized = false;
 	}
 
 	@Override
 	protected void initialize() {
+		// terminate this when received
+		subscribeBroadcast(TerminateAllBroadcast.class, t -> terminate());
+
 		// Trying to acquire a vehicle
 		Callback<AcquireVehicleEvent> tryAcquireVehicle = (e) -> {
 			Future<DeliveryVehicle> futureVehicle = resources.acquireVehicle();
@@ -36,6 +41,8 @@ public class ResourceService extends MicroService{
 			resources.releaseVehicle(e.getVehicle());
 		};
 		subscribeEvent(ReleaseVehicleEvent.class, releaseVehicle);
+		// signaling that the Micro Service has initialized
+		isInitialized = true;
 	}
-
+	public boolean isInitialized() { return isInitialized; }
 }

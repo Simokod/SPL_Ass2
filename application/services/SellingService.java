@@ -22,20 +22,22 @@ public class SellingService extends MicroService implements Serializable {
 
 	private MoneyRegister moneyRegister;
 	private int currentTick;
-	private boolean isTimed;
+	private boolean isInitialized;
 
 	public SellingService(String name) {
 		super(name);
 		moneyRegister=MoneyRegister.getInstance();
 		currentTick=0;
-		isTimed = false;
+		isInitialized = false;
 	}
 
 	@Override
 	protected void initialize() {
 		// updating time according to TimeService
 		subscribeBroadcast(TimeTickBroadcast.class, time -> currentTick++ );
-		isTimed = true;
+
+		// terminate this when received
+		subscribeBroadcast(TerminateAllBroadcast.class, t -> terminate());
 
 		// checking if the book is in the inventory
 		Callback<BookOrderEvent> order = (orderEvent) -> {
@@ -44,19 +46,24 @@ public class SellingService extends MicroService implements Serializable {
 			String bookTitle = orderEvent.getBook();
 			Future<Integer> priceIfOrderPossible = sendEvent(new CheckAvailabilityEvent(bookTitle));
 			// book is available
-			if (priceIfOrderPossible.get() != -1) {
-				moneyRegister.chargeCreditCard(orderEvent.getCustomer(), priceIfOrderPossible.get());
-				CompleteOrderEvent completeOrder =
-						new CompleteOrderEvent(this.getName(), bookTitle, priceIfOrderPossible.get(),
-								orderTick, processTick);
-				Future<OrderReceipt> receipt = sendEvent(completeOrder);
-				moneyRegister.file(receipt.get());
+			int price = priceIfOrderPossible.get();
+			if (price != -1) {		// enough money in the bank
+				if(orderEvent.getCustomer().getAvailableCreditAmount()-price >= 0) {
+					sendEvent(new TakeFromInventoryEvent(bookTitle));
+					moneyRegister.chargeCreditCard(orderEvent.getCustomer(), price);
+					CompleteOrderEvent completeOrder =
+						new CompleteOrderEvent(this.getName(), bookTitle, price, orderTick, processTick);
+					Future<OrderReceipt> receipt = sendEvent(completeOrder);
+					moneyRegister.file(receipt.get());
+				}	// not enough money in bank
+				sendEvent(new CancelOrderEvent());
 			}
 			else	// book isn't available
 				sendEvent(new CancelOrderEvent());
 			};
 		subscribeEvent(BookOrderEvent.class, order);
+		// signaling that the Micro Service has initialized
+		isInitialized = true;
 	}
-
-	public boolean isSubscribedToTime() { return isTimed; }
+	public boolean isInitialized() { return isInitialized; }
 }

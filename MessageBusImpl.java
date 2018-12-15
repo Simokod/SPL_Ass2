@@ -60,7 +60,7 @@ public class MessageBusImpl implements MessageBus {
 			System.out.println("no subs for this broadcast");                        //TODO: remove sout
 			return;
 		}
-		for(MicroService m: brdSubs.get(b.getClass()))
+		for(MicroService m: brdSubs.get(b.getClass()))	// TODO: check why null error
 			msgQueues.get(m).offer(b);
 	}
 

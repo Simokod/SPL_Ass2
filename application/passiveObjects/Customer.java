@@ -1,10 +1,7 @@
 package bgu.spl.mics.application.passiveObjects;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.LinkedList;
 
 /**
@@ -22,6 +19,7 @@ public class Customer implements Serializable {
 	private int creditNumber;
 	private int availableCreditAmount;
 	private List<OrderReceipt> receiptList;
+	private static long serialVersionUID = 456244361;
 
 	/**
 	 * constructor for the Customer class
@@ -103,5 +101,16 @@ public class Customer implements Serializable {
 	 */
 	public void chargeCreditCard(int amount){
 		availableCreditAmount-=amount;
+	}
+
+	/**
+	 *
+	 * @return a String describing the customer
+	 */
+	public String toString() {
+		return "Name: "+name +", Id: "+id+
+				", adress: "+address+", distance: "+distance+
+				", availCredit: "+availableCreditAmount+", creditNum: "+creditNumber+
+				", List of Receipts: \n"+receiptList+"\n";
 	}
 }

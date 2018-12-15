@@ -19,32 +19,32 @@ import bgu.spl.mics.application.passiveObjects.*;
 public class InventoryService extends MicroService{
 
 	private Inventory inventory;
+	private boolean isInitialized;
 
 	public InventoryService(String name) {
 		super(name);
 		inventory= Inventory.getInstance();
+		isInitialized = false;
 	}
 
 	@Override
 	protected void initialize() {
+		// terminate this when received
+		subscribeBroadcast(TerminateAllBroadcast.class, t -> terminate());
 
 		Callback<CheckAvailabilityEvent> check = (checkAvailabilityEvent)-> {
-		int price = inventory.checkAvailabiltyAndGetPrice(checkAvailabilityEvent.getName());
-		if (price != -1) {
-			CheckBankAccountEvent checkAcc = new CheckBankAccountEvent(price);
-			Future<Boolean> hasMoney = sendEvent(checkAcc);			//@TODO: check for diarrhea leaks
-			if(hasMoney.get()){
-				if(inventory.take(checkAvailabilityEvent.getName()) == OrderResult.SUCCESSFULLY_TAKEN)
-					complete(checkAvailabilityEvent, price);
-				else
-					complete(checkAvailabilityEvent, -1);
-			}
-			else
-				complete(checkAvailabilityEvent, -1);
-		}
-		else
-			complete(checkAvailabilityEvent, -1);
+			int price = inventory.checkAvailabiltyAndGetPrice(checkAvailabilityEvent.getName());
+			complete(checkAvailabilityEvent, price);
 		};
 		subscribeEvent(CheckAvailabilityEvent.class, check);
+
+		// removing a book from the inventory
+		Callback<TakeFromInventoryEvent> take = (takeFromInventoryEvent) ->
+				inventory.take(takeFromInventoryEvent.getBookTitle());
+		subscribeEvent(TakeFromInventoryEvent.class, take);
+
+		// signaling that the Micro Service has initialized
+		isInitialized = true;
 	}
+	public boolean isInitialized() { return isInitialized; }
 }

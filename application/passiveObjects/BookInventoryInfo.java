@@ -56,8 +56,8 @@ public class BookInventoryInfo implements Serializable {
 	/**
 	 * @return a string describing the book
 	 */
-	public String toString(){
-		return "Book name: "+bookTitle+", Amount in inventory: "+amount+", Price: "+price;
-	}
+//	public String toString(){
+//		return "Book name: "+bookTitle+", Amount in inventory: "+amount+", Price: "+price;
+//	}
 	
 }

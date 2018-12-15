@@ -19,16 +19,14 @@ public class MoneyRegister implements Serializable {
 
 	private static MoneyRegister instance = new MoneyRegister();
 	private List<OrderReceipt> receiptList;
-	private int version;
-	private int totalEernings;
+	private int totalEarnings;
 
 	/**
 	 * Private Constructor
 	 */
 	private MoneyRegister(){
 		this.receiptList = new LinkedList<>();
-		version=0;
-		totalEernings=0;
+		totalEarnings=0;
 	}
 	/**
      * Retrieves the single instance of this class.
@@ -45,7 +43,7 @@ public class MoneyRegister implements Serializable {
 	/**
      * Retrieves the current total earnings of the store.  
      */
-	public int getTotalEarnings() { return totalEernings; }
+	public int getTotalEarnings() { return totalEarnings; }
 
 	/**
      * Charges the credit card of the customer a certain amount of money.
@@ -55,7 +53,7 @@ public class MoneyRegister implements Serializable {
 	public synchronized void chargeCreditCard(Customer c, int amount) {
 		if(c.getAvailableCreditAmount() >= amount){
 			c.chargeCreditCard(amount);
-			totalEernings+=amount;
+			totalEarnings+=amount;
 		}
 	}
 	

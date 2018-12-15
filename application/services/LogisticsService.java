@@ -15,12 +15,18 @@ import bgu.spl.mics.application.passiveObjects.*;
  */
 public class LogisticsService extends MicroService {
 
+	private boolean isInitialized;
+
 	public LogisticsService(String name) {
 		super(name);
+		isInitialized = false;
 	}
 
 	@Override
 	protected void initialize() {
+		// terminate this when received
+		subscribeBroadcast(TerminateAllBroadcast.class, t -> terminate());
+
 		// Handling delivery event
 		Callback<DeliveryEvent> makeDelivery = (deliveryEvent) -> {
 			Future<DeliveryVehicle> futureVehicle = sendEvent(new AcquireVehicleEvent());
@@ -29,6 +35,8 @@ public class LogisticsService extends MicroService {
 			sendEvent(new ReleaseVehicleEvent(vehicle));
 		};
 		subscribeEvent(DeliveryEvent.class, makeDelivery);
+		// signaling that the Micro Service has initialized
+		isInitialized = true;
 	}
-
+	public boolean isInitialized() { return isInitialized; }
 }
