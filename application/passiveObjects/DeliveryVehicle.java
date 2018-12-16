@@ -10,13 +10,14 @@ public class DeliveryVehicle {
 
 	private int license;
 	private int speed;
-
+	private int maxDeliveryTime;
 	/**
      * Constructor.   
      */
-	 public DeliveryVehicle(int license, int speed) {
+	 public DeliveryVehicle(int license, int speed, int maxDeliveryTime) {
 	 	this.license=license;
 	 	this.speed=speed;
+		this.maxDeliveryTime = maxDeliveryTime;
 	  }
 	/**
      * Retrieves the license of this delivery vehicle.   
@@ -44,7 +45,7 @@ public class DeliveryVehicle {
 	public void deliver(String address, int distance) {
 		synchronized (this) {
 			try {
-				Thread.sleep((long) distance / speed);
+				Thread.sleep(Math.min((long) distance / speed,(maxDeliveryTime)));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

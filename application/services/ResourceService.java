@@ -32,14 +32,12 @@ public class ResourceService extends MicroService{
 		// Trying to acquire a vehicle
 		Callback<AcquireVehicleEvent> tryAcquireVehicle = (e) -> {
 			Future<DeliveryVehicle> futureVehicle = resources.acquireVehicle();
-			complete(e, futureVehicle.get());
+			complete(e, futureVehicle);
 		};
 		subscribeEvent(AcquireVehicleEvent.class, tryAcquireVehicle);
 
 		// Releasing a vehicle after delivery is complete
-		Callback<ReleaseVehicleEvent> releaseVehicle = (e) -> {
-			resources.releaseVehicle(e.getVehicle());
-		};
+		Callback<ReleaseVehicleEvent> releaseVehicle = (e) -> resources.releaseVehicle(e.getVehicle());
 		subscribeEvent(ReleaseVehicleEvent.class, releaseVehicle);
 		// signaling that the Micro Service has initialized
 		isInitialized = true;

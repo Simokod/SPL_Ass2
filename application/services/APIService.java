@@ -63,13 +63,13 @@ public class APIService extends MicroService{
 			int price = completeOrderEvent.getPrice();
 			int orderTick = completeOrderEvent.getOrderTick();
 			int proccessTick = completeOrderEvent.getProcessTick();
-			OrderReceipt receipt= new OrderReceipt(orderId, seller, c, bookTitle, price,
+			OrderReceipt receipt= new OrderReceipt(orderId, seller, completeOrderEvent.getCustomer(), bookTitle, price,
 													currentTick, orderTick, proccessTick);
 			orderId++;
 
 
-			synchronized (c) {
-				c.getCustomerReceiptList().add(receipt);
+			synchronized (completeOrderEvent.getCustomer()) {
+				completeOrderEvent.getCustomer().getCustomerReceiptList().add(receipt);
 			}
 			complete(completeOrderEvent, receipt);
 			sendEvent(new DeliveryEvent(c.getAddress(),c.getDistance()));

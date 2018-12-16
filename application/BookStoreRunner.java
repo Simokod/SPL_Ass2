@@ -5,13 +5,14 @@ import bgu.spl.mics.application.passiveObjects.*;
 import bgu.spl.mics.application.services.*;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
+import  bgu.spl.mics.application.passiveObjects.*;
 
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.concurrent.atomic.AtomicInteger;
+
 
 /** This is the Main class of the application. You should parse the input file,
  * create the different instances of the objects, and run the system.
@@ -36,7 +37,6 @@ public class BookStoreRunner {
             JsonArray JsonVehicles = JsonObjvehicles.getAsJsonArray("vehicles");
             DeliveryVehicle[] vehicles = gson.fromJson(JsonVehicles, DeliveryVehicle[].class);
             ResourcesHolder.getInstance().load(vehicles);
-
             // Json Services
             JsonObject JsonServices = input.getAsJsonObject("services");
 
@@ -75,7 +75,7 @@ public class BookStoreRunner {
             LogisticsService[] logisticsServices = new LogisticsService[amountOfLogisticsServices];
             Thread[] logisticsServicesThreads = new Thread[amountOfLogisticsServices];
             for(int i=0;i<amountOfLogisticsServices;i++) {
-                logisticsServices[i] = new LogisticsService("Logistics Service " + (i + 1));
+                logisticsServices[i] = new LogisticsService("Logistics Service " + (i + 1), duration);
                 logisticsServicesThreads[i] = new Thread(logisticsServices[i]);
             }
 
@@ -135,8 +135,6 @@ public class BookStoreRunner {
             MoneyRegister.getInstance().printOrderReceipts(args[3]);
             // printing to a file the MoneyRegister object
             printMoneyRegister(args[4], MoneyRegister.getInstance());
-
-
 
         } catch (Exception e) {
             e.printStackTrace();

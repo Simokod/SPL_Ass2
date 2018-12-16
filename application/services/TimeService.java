@@ -53,6 +53,9 @@ public class TimeService extends MicroService{
 		};
 
 		timer.scheduleAtFixedRate(tick, 0, speed);
+
+		// terminate this when received
+		subscribeBroadcast(TerminateAllBroadcast.class, t -> terminate());
 	}
 	public boolean isFinished() { return isFinished; }
 }

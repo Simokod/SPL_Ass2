@@ -4,6 +4,8 @@ import bgu.spl.mics.*;
 import bgu.spl.mics.application.messages.*;
 import bgu.spl.mics.application.passiveObjects.*;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Logistic service in charge of delivering books that have been purchased to customers.
  * Handles {@link DeliveryEvent}.
@@ -16,10 +18,12 @@ import bgu.spl.mics.application.passiveObjects.*;
 public class LogisticsService extends MicroService {
 
 	private boolean isInitialized;
+	private int maxDeliveryTime;
 
-	public LogisticsService(String name) {
+	public LogisticsService(String name, int maxDeliveryTime) {
 		super(name);
-		isInitialized = false;
+		this.isInitialized = false;
+		this.maxDeliveryTime = maxDeliveryTime;
 	}
 
 	@Override
@@ -29,8 +33,10 @@ public class LogisticsService extends MicroService {
 
 		// Handling delivery event
 		Callback<DeliveryEvent> makeDelivery = (deliveryEvent) -> {
-			Future<DeliveryVehicle> futureVehicle = sendEvent(new AcquireVehicleEvent());
-			DeliveryVehicle vehicle = futureVehicle.get();
+			Future<Future<DeliveryVehicle>> futureVehicle = sendEvent(new AcquireVehicleEvent());
+			if(futureVehicle == null || futureVehicle.get(maxDeliveryTime, TimeUnit.SECONDS)==null)
+				return;
+			DeliveryVehicle vehicle = futureVehicle.get().get(maxDeliveryTime, TimeUnit.SECONDS);
 			vehicle.deliver(deliveryEvent.getAddress(), deliveryEvent.getDistance());
 			sendEvent(new ReleaseVehicleEvent(vehicle));
 		};

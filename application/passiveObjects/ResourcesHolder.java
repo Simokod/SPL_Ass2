@@ -16,11 +16,15 @@ public class ResourcesHolder {
 
 	private static ResourcesHolder instance = new ResourcesHolder();
 	private ConcurrentLinkedQueue<DeliveryVehicle> vehiclesQ;
+	private ConcurrentLinkedQueue<Future<DeliveryVehicle>> futureVehicles;
 
 	/**
 	 * Constructor
 	 */
-	private ResourcesHolder() { vehiclesQ = new ConcurrentLinkedQueue<>(); }
+	private ResourcesHolder() {
+		vehiclesQ = new ConcurrentLinkedQueue<>();
+		futureVehicles = new ConcurrentLinkedQueue<>();
+	}
 
 	/**
      * Retrieves the single instance of this class.
@@ -37,15 +41,15 @@ public class ResourcesHolder {
 	public Future<DeliveryVehicle> acquireVehicle() {
 		Future<DeliveryVehicle> futureVehicle = new Future<>();
 		synchronized (vehiclesQ) {
-			try {
-				while(vehiclesQ.isEmpty())
-					this.wait();
+			if(!vehiclesQ.isEmpty()) {
 				futureVehicle.resolve(vehiclesQ.poll());
-			} catch (InterruptedException e) {
-				System.out.println("interrupted while waiting for a vehicle");
+				return futureVehicle;
 			}
 		}
-		return futureVehicle;
+		synchronized (futureVehicles) {
+			futureVehicles.offer(futureVehicle);
+			return futureVehicle;
+		}
 	}
 	
 	/**
@@ -55,9 +59,11 @@ public class ResourcesHolder {
      * @param vehicle	{@link DeliveryVehicle} to be released.
      */
 	public void releaseVehicle(DeliveryVehicle vehicle) {
-		synchronized (vehiclesQ) {
-			vehiclesQ.offer(vehicle);
-			vehiclesQ.notifyAll();
+		synchronized (futureVehicles) {
+			if(futureVehicles.isEmpty())
+				vehiclesQ.offer(vehicle);
+			else
+				futureVehicles.poll().resolve(vehicle);
 		}
 	}
 

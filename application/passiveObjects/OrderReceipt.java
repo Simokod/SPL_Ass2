@@ -85,7 +85,7 @@ public class OrderReceipt implements Serializable {
 	}
 
 	public String toString() {
-		return "orderId: "+orderId+",customer's name: "+customer.getName()+", BookTitle: "+bookTitle+
+		return "orderId: "+orderId+",customer's name: "+customer.getName()+", BookTitle: "+bookTitle+", price: "+price+
 				", IssuedTick: "+issuedTick+", OrderTick: "+orderTick+", ProcessTick: "+processTick+"\n";
 	}
 }

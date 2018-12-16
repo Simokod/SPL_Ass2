@@ -33,12 +33,16 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		eventSubs.computeIfAbsent(type, k -> new ConcurrentLinkedQueue<>()).add(m);
+		synchronized (eventSubs) {
+			eventSubs.computeIfAbsent(type, k -> new ConcurrentLinkedQueue<>()).add(m);
+		}
 	}
 
 	@Override
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		brdSubs.computeIfAbsent(type, k -> new LinkedList<>()).add(m);
+		synchronized (brdSubs) {
+			brdSubs.computeIfAbsent(type, k -> new LinkedList<>()).add(m);
+		}
 	}
 
 	@Override
@@ -56,23 +60,32 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		if(brdSubs.get(b.getClass())==null) {
+		if(brdSubs.get(b.getClass())==null || brdSubs.get(b.getClass()).isEmpty()) {
 			System.out.println("no subs for this broadcast");                        //TODO: remove sout
 			return;
 		}
-		for(MicroService m: brdSubs.get(b.getClass()))	// TODO: check why null error
-			msgQueues.get(m).offer(b);
+		synchronized (brdSubs) {
+			for(MicroService m: brdSubs.get(b.getClass())){					// TODO: check why null error
+				System.out.println(msgQueues.get(m));						// TODO remove sout
+				msgQueues.get(m).offer(b);
+			}
+		}
 	}
 
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
 		Class eventClass = e.getClass();
-		if(eventSubs.get(eventClass)==null) {
-			System.out.println("no subs for this event");
-			return null;
+		synchronized (eventSubs) {
+			if(eventSubs.get(eventClass)==null)
+				return null;
+			if (eventSubs.get(eventClass).isEmpty()) {
+				Future<T> f = new Future<>();
+				f.resolve(null);
+				return f;
+			}
+ 			msgQueues.get(eventSubs.get(eventClass).peek()).offer(e);			// Adding the event to the microService in line
+			eventSubs.get(eventClass).offer(eventSubs.get(eventClass).poll());	// Moving the microService to the back of the queue according to round robin
 		}
-		msgQueues.get(eventSubs.get(eventClass).peek()).offer(e);			// Adding the event to the microService in line
-		eventSubs.get(eventClass).offer(eventSubs.get(eventClass).poll());	// Moving the microService to the back of the queue according to round robin
 		Future<T> temp = new Future<>();
 		synchronized (eventFutures) {
 			eventFutures.put(e, temp);
@@ -85,21 +98,19 @@ public class MessageBusImpl implements MessageBus {
 	public void register(MicroService m) {
 		synchronized (msgQueues) {
 			msgQueues.put(m, new LinkedBlockingQueue<>());
-			msgQueues.notifyAll();
 		}
 	}
 
 	@Override
 	public void unregister(MicroService m) {
-		LinkedBlockingQueue<Message> temp = new LinkedBlockingQueue<>();
-		msgQueues.get(m).drainTo(temp);
-		msgQueues.remove(m);
-		Iterator it = temp.iterator();
-		while (it.hasNext()) {
-			if (it.getClass().getName().equals("Broadcast"))
-				sendBroadcast((Broadcast) brdSubs.remove(it));
-			else
-				sendEvent((Event) eventSubs.remove(it));
+		synchronized (eventSubs) {
+			eventSubs.forEach((k,v) -> v.remove(m));
+		}
+		synchronized (brdSubs) {
+			brdSubs.forEach((k,v) -> v.remove(m));
+		}
+		synchronized (msgQueues) {
+			msgQueues.remove(m);
 		}
 	}
 
