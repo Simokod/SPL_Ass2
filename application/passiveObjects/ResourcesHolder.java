@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class ResourcesHolder {
 
 	private static ResourcesHolder instance = new ResourcesHolder();
-	private ConcurrentLinkedQueue<DeliveryVehicle> vehiclesQ;
-	private ConcurrentLinkedQueue<Future<DeliveryVehicle>> futureVehicles;
+	private ConcurrentLinkedQueue<DeliveryVehicle> vehiclesQ;				// a queue for available vehicles
+	private ConcurrentLinkedQueue<Future<DeliveryVehicle>> futureVehicles;	// a queue for future-available vehicles
 
 	/**
 	 * Constructor

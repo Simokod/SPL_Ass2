@@ -108,9 +108,7 @@ public class Customer implements Serializable {
 	 * @return a String describing the customer
 	 */
 	public String toString() {
-		return "Name: "+name +", Id: "+id+
-				", adress: "+address+", distance: "+distance+
-				", availCredit: "+availableCreditAmount+", creditNum: "+creditNumber+
-				", List of Receipts: \n"+receiptList+"\n";
+		return "Name: "+name +", Id: "+id+", adress: "+address+", distance: "+distance+
+				", availCredit: "+availableCreditAmount+", creditNum: "+creditNumber+"\n";
 	}
 }

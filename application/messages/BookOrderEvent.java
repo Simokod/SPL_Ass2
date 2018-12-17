@@ -3,7 +3,7 @@ package bgu.spl.mics.application.messages;
 import bgu.spl.mics.Event;
 import bgu.spl.mics.application.passiveObjects.BookInventoryInfo;
 import bgu.spl.mics.application.passiveObjects.Customer;
-    // sent by APIService, handled by SellingService
+         // sent by APIService, handled by SellingService
 public class BookOrderEvent implements Event<Boolean>{
 
     private String book;

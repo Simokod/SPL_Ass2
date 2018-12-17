@@ -34,6 +34,7 @@ public class LogisticsService extends MicroService {
 		// Handling delivery event
 		Callback<DeliveryEvent> makeDelivery = (deliveryEvent) -> {
 			Future<Future<DeliveryVehicle>> futureVehicle = sendEvent(new AcquireVehicleEvent());
+			// the future or it's value will be null if the program finishes while this service is doing a delivery
 			if(futureVehicle == null || futureVehicle.get(maxDeliveryTime, TimeUnit.SECONDS)==null)
 				return;
 			DeliveryVehicle vehicle = futureVehicle.get().get(maxDeliveryTime, TimeUnit.SECONDS);

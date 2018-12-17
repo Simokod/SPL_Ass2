@@ -58,10 +58,7 @@ public class SellingService extends MicroService implements Serializable {
 					Future<OrderReceipt> receipt = sendEvent(completeOrder);
 					moneyRegister.file(receipt.get());
 				}	// not enough money in bank
-				sendEvent(new CancelOrderEvent());
 			}
-			else	// book isn't available
-				sendEvent(new CancelOrderEvent());
 			};
 		subscribeEvent(BookOrderEvent.class, order);
 		// signaling that the Micro Service has initialized

@@ -1,8 +1,5 @@
 package bgu.spl.mics;
 
-import bgu.spl.mics.application.messages.TimeTick;
-
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -16,10 +13,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class MessageBusImpl implements MessageBus {
 
 	private static MessageBusImpl instance = new MessageBusImpl();
-	private ConcurrentHashMap<MicroService, LinkedBlockingQueue<Message>> msgQueues;					// a message queue for each ms
-	private ConcurrentHashMap<Class<? extends Event> , ConcurrentLinkedQueue<MicroService>> eventSubs;	// saving subs to events
-	private ConcurrentHashMap<Class<? extends Broadcast> , LinkedList<MicroService>> brdSubs;			// saving subs to broadcasts
-	private ConcurrentHashMap<Event, Future> eventFutures;
+	private ConcurrentHashMap<MicroService, LinkedBlockingQueue<Message>> msgQueues;					// a message queue for each MicroService
+	private ConcurrentHashMap<Class<? extends Event> , ConcurrentLinkedQueue<MicroService>> eventSubs;	// a queue of MicroServices for each type of Event
+	private ConcurrentHashMap<Class<? extends Broadcast> , LinkedList<MicroService>> brdSubs;			// a queue of MicroServices for each type of BroadCast
+	private ConcurrentHashMap<Event, Future> eventFutures;												// matching Events and their Futures
 
 	// Private Constructor
 	private MessageBusImpl(){
@@ -52,7 +49,7 @@ public class MessageBusImpl implements MessageBus {
 				try {
 					eventFutures.wait();
 				} catch (InterruptedException e1) {
-					System.out.println("interrupted while waiting for future");		// TODO: remove syso
+					System.out.println("interrupted while waiting for future");		// TODO: remove sout
 				}
 		}
 		eventFutures.get(e).resolve(result);
@@ -65,8 +62,8 @@ public class MessageBusImpl implements MessageBus {
 			return;
 		}
 		synchronized (brdSubs) {
-			for(MicroService m: brdSubs.get(b.getClass())){					// TODO: check why null error
-				System.out.println(msgQueues.get(m));						// TODO remove sout
+			for(MicroService m: brdSubs.get(b.getClass())){
+				System.out.println(msgQueues.get(m));								// TODO remove sout
 				msgQueues.get(m).offer(b);
 			}
 		}
@@ -76,7 +73,8 @@ public class MessageBusImpl implements MessageBus {
 	public <T> Future<T> sendEvent(Event<T> e) {
 		Class eventClass = e.getClass();
 		synchronized (eventSubs) {
-			if(eventSubs.get(eventClass)==null)
+													// in-case the micro services, who are supposed to be subscribed
+			if(eventSubs.get(eventClass)==null)		// to this type of event, terminated, send a future holding null
 				return null;
 			if (eventSubs.get(eventClass).isEmpty()) {
 				Future<T> f = new Future<>();
@@ -103,12 +101,12 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void unregister(MicroService m) {
-		synchronized (eventSubs) {
+		synchronized (eventSubs) {			// removing this microservice m from the subscribing lists
 			eventSubs.forEach((k,v) -> v.remove(m));
 		}
 		synchronized (brdSubs) {
 			brdSubs.forEach((k,v) -> v.remove(m));
-		}
+		}									// removing this microservice's message queue from the messageBus
 		synchronized (msgQueues) {
 			msgQueues.remove(m);
 		}

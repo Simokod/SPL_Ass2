@@ -46,9 +46,6 @@ public class APIService extends MicroService{
 		// terminate this when received
 		subscribeBroadcast(TerminateAllBroadcast.class, t -> terminate());
 
-		// canceling order because of inventory or bank account
-		subscribeEvent(CancelOrderEvent.class, cancel -> {/**/}) ;	// TODO: fix this shit
-
 		// CheckBankAccountEvent handler
 		Callback<CheckBankAccountEvent> checkBankAcc = (checkAccEvent) ->
 			complete(checkAccEvent, (c.getAvailableCreditAmount()-checkAccEvent.getPrice())>=0);
@@ -66,11 +63,11 @@ public class APIService extends MicroService{
 			OrderReceipt receipt= new OrderReceipt(orderId, seller, completeOrderEvent.getCustomer(), bookTitle, price,
 													currentTick, orderTick, proccessTick);
 			orderId++;
-
-
+			// sending the receipt to the customer
 			synchronized (completeOrderEvent.getCustomer()) {
 				completeOrderEvent.getCustomer().getCustomerReceiptList().add(receipt);
 			}
+			// finishing the order
 			complete(completeOrderEvent, receipt);
 			sendEvent(new DeliveryEvent(c.getAddress(),c.getDistance()));
 		};
